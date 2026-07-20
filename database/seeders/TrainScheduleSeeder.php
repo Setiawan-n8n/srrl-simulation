@@ -22,8 +22,10 @@ class TrainScheduleSeeder extends Seeder
         $path = database_path('seeders/data/jadwal_sgu_2026-07-15.json');
         $rows = json_decode(file_get_contents($path), true);
 
+        $sguId = Station::where('code', 'SGU')->value('id');
+
         $stationCache = Station::query()->pluck('id', 'code')->all();
-        $trackCache = Track::query()->pluck('id', 'code')->all();
+        $trackCache = Track::query()->where('station_id', $sguId)->pluck('id', 'code')->all();
 
         TrainSchedule::where('tanggal', $this->tanggal)->delete();
 
@@ -34,6 +36,7 @@ class TrainScheduleSeeder extends Seeder
             );
 
             TrainSchedule::query()->create([
+                'station_id' => $sguId,
                 'tanggal' => $this->tanggal,
                 'urutan' => $row['urutan'] ?? 0,
                 'train_id' => $train->id,

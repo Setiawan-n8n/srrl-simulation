@@ -3,79 +3,220 @@
 namespace Database\Seeders;
 
 use App\Models\Signal;
+use App\Models\Station;
 use App\Models\Track;
 use App\Models\Wesel;
 use Illuminate\Database\Seeder;
 
 class SignalWeselSeeder extends Seeder
 {
-    /**
-     * Denah disederhanakan dari "Gambar Emplasemen Stasiun SGU.pdf" (Sintelis Daop 8, Juni 2017):
-     * 6 jalur (I-VI) sejajar, wesel di kedua ujung (throat) mengumpul ke arah
-     * Wonokromo (barat) dan ke arah Sidotopo/Surabaya Kota (timur).
-     * Kode sinyal & wesel di bawah ini adalah representasi umum yang bisa
-     * disesuaikan lagi lewat panel admin agar sama persis dengan gambar asli.
-     */
-    private array $layout = [
-        ['code' => 'I',   'y' => 90,  'sinyal_barat' => '74',  'sinyal_timur' => '51', 'wesel_barat' => '212T', 'wesel_timur' => '274T'],
-        ['code' => 'II',  'y' => 160, 'sinyal_barat' => '72',  'sinyal_timur' => '52', 'wesel_barat' => '216T', 'wesel_timur' => '277T'],
-        ['code' => 'III', 'y' => 230, 'sinyal_barat' => '71',  'sinyal_timur' => '53', 'wesel_barat' => '219T', 'wesel_timur' => '279T'],
-        ['code' => 'IV',  'y' => 300, 'sinyal_barat' => '73',  'sinyal_timur' => '54', 'wesel_barat' => '225T', 'wesel_timur' => '281T'],
-        ['code' => 'V',   'y' => 370, 'sinyal_barat' => '78',  'sinyal_timur' => '55', 'wesel_barat' => '231T', 'wesel_timur' => '292T'],
-        ['code' => 'VI',  'y' => 440, 'sinyal_barat' => '70',  'sinyal_timur' => '68', 'wesel_barat' => '260T', 'wesel_timur' => '332T'],
-    ];
+    /** Stasiun lain yang dapat denah sederhana (1 sinyal masuk + 1 wesel per jalur per sisi). */
+    private array $stasiunLain = ['SBI', 'SBK', 'WO', 'WR', 'GDG', 'SDA'];
 
     public function run(): void
     {
-        foreach ($this->layout as $row) {
-            $track = Track::where('code', $row['code'])->first();
+        $sgu = Station::where('code', 'SGU')->first();
+        if ($sgu) {
+            $this->seedSguPresisi($sgu);
+        }
+
+        foreach ($this->stasiunLain as $code) {
+            $station = Station::where('code', $code)->first();
+            if (! $station) {
+                continue;
+            }
+
+            $tracks = Track::where('station_id', $station->id)->orderBy('sort_order')->get();
+            $labelBarat = $station->arah_barat_label ?: 'Barat';
+            $labelTimur = $station->arah_timur_label ?: 'Timur';
+
+            foreach ($tracks as $i => $track) {
+                $n = $i + 1;
+                $y = 90 + $i * 70;
+
+                $this->buatSinyalWesel(
+                    $station->id,
+                    $track,
+                    $y,
+                    "{$code}M{$n}B",
+                    "{$code}M{$n}T",
+                    "{$code}W{$n}B",
+                    "{$code}W{$n}T",
+                    $labelBarat,
+                    $labelTimur
+                );
+            }
+        }
+    }
+
+    /**
+     * Sinyal & wesel SGU, digitisasi presisi dari lapisan teks PDF (lihat
+     * catatan metodologi lengkap di TrackSeeder::seedJalurSguPresisi()).
+     * Sumber: database/seeders/data/sgu_geometri_presisi.json.
+     *
+     * Setiap titik sudah punya posisi (x,y) pada viewBox gambar asli DAN
+     * posisi_km (KM chainage sungguhan, dipakai untuk tooltip & hitungan
+     * panjang) -- bukan lagi kode "*T" (nomor seksi track circuit) seperti
+     * data lama, melainkan nomor wesel/sinyal fisik (201, 203, ..., 281,
+     * kotak sinyal 51-55/71-74, dst.) langsung dari label pada gambar.
+     *
+     * Keterbatasan yang masih berlaku: pengelompokan tiap titik ke jalur
+     * (I-VI) memakai jarak piksel-Y terdekat, dan pembedaan wesel fisik vs
+     * kelompok ikon sinyal masuk memakai heuristik pola nomor (lihat
+     * TrackSeeder). Topologi sambungan antar-wesel (persilangan ke jalur
+     * lain) belum dipetakan -- posisi & KM tiap titik akurat, tapi field
+     * track_from_id/track_to_id pada Wesel di sini disamakan dengan
+     * track_id jalur tempat titik itu berada (belum memodelkan crossover).
+     */
+    private function seedSguPresisi(Station $sgu): void
+    {
+        $path = database_path('seeders/data/sgu_geometri_presisi.json');
+        if (! file_exists($path)) {
+            return;
+        }
+        $data = json_decode(file_get_contents($path), true);
+        $tracks = Track::where('station_id', $sgu->id)->orderBy('sort_order')->get();
+
+        // PENTING: hapus dulu SEMUA sinyal/wesel SGU yang sudah ada sebelum
+        // menulis ulang dari data presisi. Versi lama seeder ini (sebelum
+        // digitisasi presisi) sempat menulis kode placeholder gaya "*T"
+        // (nomor seksi track circuit, mis. "225T", "281T") dan kode
+        // auto-numbering lain -- karena updateOrCreate() di bawah hanya
+        // meng-update baris yang KODE-nya cocok persis dengan data baru,
+        // baris lama dengan kode yang sudah tidak dipakai lagi (tidak ada
+        // padanannya di data presisi) tidak pernah terhapus otomatis dan
+        // terus nyangkut di database produksi -- itulah sebabnya sempat
+        // muncul tooltip hover seperti "Switch 225T"/"Signal 70" yang tidak
+        // punya simbol di gambar (posisinya peninggalan metode lama, bukan
+        // dari digitisasi presisi ini). Wipe-and-recreate di sini menjamin
+        // tidak ada sisa data lama, dengan konsekuensi: kalau ada
+        // sinyal/wesel SGU yang PERNAH diedit manual lewat panel admin,
+        // editan itu akan hilang & ditimpa ulang oleh hasil digitisasi tiap
+        // kali seeder ini dijalankan.
+        Signal::where('station_id', $sgu->id)->delete();
+        Wesel::where('station_id', $sgu->id)->delete();
+
+        $sisiDari = function (float $x, array $t): string {
+            // barat = sebelah barat peron (arah Wonokromo), timur = sebelah timur peron (arah Sidotopo/Kota)
+            return $x <= (($t['peron_west_x'] + $t['peron_east_x']) / 2) ? 'barat' : 'timur';
+        };
+
+        foreach ($data['tracks'] as $code => $t) {
+            $track = $tracks->firstWhere('code', $code);
             if (! $track) {
                 continue;
             }
 
+            foreach ($t['wesels'] as $w) {
+                $side = $sisiDari($w['x'], $t);
+                if (($w['type'] ?? 'wesel') === 'signal') {
+                    Signal::query()->updateOrCreate(
+                        ['station_id' => $sgu->id, 'code' => $w['code'], 'side' => $side],
+                        [
+                            'track_id' => $track->id,
+                            'jenis' => 'masuk',
+                            'posisi_km' => $w['km'],
+                            'pos_x' => (int) round($w['x']),
+                            'pos_y' => (int) round($w['y']),
+                            'keterangan' => "Sinyal masuk untuk {$track->name}, KM {$this->fmtKm($w['km'])}. Posisi diambil langsung dari label kode pada lapisan teks PDF (Gambar Emplasemen Stasiun Wilayah SRRL, halaman SURABAYA GUBENG), dikonversi ke KM chainage lewat kurva kalibrasi titik-KM asli pada gambar yang sama (bukan perkiraan piksel).",
+                        ]
+                    );
+                } else {
+                    Wesel::query()->updateOrCreate(
+                        ['station_id' => $sgu->id, 'code' => $w['code'], 'side' => $side],
+                        [
+                            'track_from_id' => $track->id,
+                            'track_to_id' => $track->id,
+                            'posisi_km' => $w['km'],
+                            'pos_x' => (int) round($w['x']),
+                            'pos_y' => (int) round($w['y']),
+                            'keterangan' => "Wesel/titik pengaman {$track->name}, KM {$this->fmtKm($w['km'])}. Posisi & KM diambil langsung dari label kode pada lapisan teks PDF (Gambar Emplasemen Stasiun Wilayah SRRL, halaman SURABAYA GUBENG). Topologi sambungan ke jalur lain (crossover) belum dipetakan -- track_from_id/track_to_id disamakan dengan jalur ini.",
+                        ]
+                    );
+                }
+            }
+        }
+
+        // Sinyal masuk tingkat stasiun (kotak nomor 51-55 & 71-74) yang posisinya
+        // berada di baris bersama di atas seluruh jalur, sehingga jalur spesifik
+        // yang dikendalikannya tidak bisa dipastikan dari data teks saja --
+        // disimpan tanpa track_id (berlaku umum untuk arah tsb).
+        foreach ($data['station_signals'] as $s) {
             Signal::query()->updateOrCreate(
-                ['code' => $row['sinyal_barat'], 'side' => 'barat'],
+                ['station_id' => $sgu->id, 'code' => $s['code'], 'side' => $s['arah']],
                 [
-                    'track_id' => $track->id,
+                    'track_id' => null,
                     'jenis' => 'masuk',
-                    'pos_x' => 170,
-                    'pos_y' => $row['y'],
-                    'keterangan' => "Sinyal masuk arah Wonokromo untuk {$track->name}",
-                ]
-            );
-
-            Signal::query()->updateOrCreate(
-                ['code' => $row['sinyal_timur'], 'side' => 'timur'],
-                [
-                    'track_id' => $track->id,
-                    'jenis' => 'masuk',
-                    'pos_x' => 1030,
-                    'pos_y' => $row['y'],
-                    'keterangan' => "Sinyal masuk arah Sidotopo/Surabaya Kota untuk {$track->name}",
-                ]
-            );
-
-            Wesel::query()->updateOrCreate(
-                ['code' => $row['wesel_barat'], 'side' => 'barat'],
-                [
-                    'track_from_id' => $track->id,
-                    'track_to_id' => $track->id,
-                    'pos_x' => 280,
-                    'pos_y' => $row['y'],
-                    'keterangan' => "Wesel throat barat untuk {$track->name}",
-                ]
-            );
-
-            Wesel::query()->updateOrCreate(
-                ['code' => $row['wesel_timur'], 'side' => 'timur'],
-                [
-                    'track_from_id' => $track->id,
-                    'track_to_id' => $track->id,
-                    'pos_x' => 920,
-                    'pos_y' => $row['y'],
-                    'keterangan' => "Wesel throat timur untuk {$track->name}",
+                    'posisi_km' => $s['km'],
+                    'pos_x' => (int) round($s['x']),
+                    'pos_y' => (int) round($s['y']),
+                    'keterangan' => "Sinyal masuk stasiun arah ".($s['arah'] === 'barat' ? 'Wonokromo' : 'Sidotopo/Surabaya Kota').", KM {$this->fmtKm($s['km'])}. Posisi diambil langsung dari kotak nomor sinyal pada lapisan teks PDF. Sinyal ini berada di baris bersama sebelum jalur bercabang ke I-VI, sehingga belum dipetakan ke satu jalur spesifik (track_id kosong) -- secara operasional mengendalikan beberapa jalur sekaligus lewat interlocking.",
                 ]
             );
         }
+    }
+
+    private function fmtKm(float $km): string
+    {
+        $whole = floor($km);
+        $meter = (int) round(($km - $whole) * 1000);
+
+        return $whole.'+'.str_pad((string) $meter, 3, '0', STR_PAD_LEFT);
+    }
+
+    private function buatSinyalWesel(
+        int $stationId,
+        Track $track,
+        int $y,
+        string $sinyalBarat,
+        string $sinyalTimur,
+        string $weselBarat,
+        string $weselTimur,
+        string $labelBarat,
+        string $labelTimur
+    ): void {
+        Signal::query()->updateOrCreate(
+            ['station_id' => $stationId, 'code' => $sinyalBarat, 'side' => 'barat'],
+            [
+                'track_id' => $track->id,
+                'jenis' => 'masuk',
+                'pos_x' => 170,
+                'pos_y' => $y,
+                'keterangan' => "Sinyal masuk arah {$labelBarat} untuk {$track->name}",
+            ]
+        );
+
+        Signal::query()->updateOrCreate(
+            ['station_id' => $stationId, 'code' => $sinyalTimur, 'side' => 'timur'],
+            [
+                'track_id' => $track->id,
+                'jenis' => 'masuk',
+                'pos_x' => 1030,
+                'pos_y' => $y,
+                'keterangan' => "Sinyal masuk arah {$labelTimur} untuk {$track->name}",
+            ]
+        );
+
+        Wesel::query()->updateOrCreate(
+            ['station_id' => $stationId, 'code' => $weselBarat, 'side' => 'barat'],
+            [
+                'track_from_id' => $track->id,
+                'track_to_id' => $track->id,
+                'pos_x' => 280,
+                'pos_y' => $y,
+                'keterangan' => "Wesel throat barat untuk {$track->name}",
+            ]
+        );
+
+        Wesel::query()->updateOrCreate(
+            ['station_id' => $stationId, 'code' => $weselTimur, 'side' => 'timur'],
+            [
+                'track_from_id' => $track->id,
+                'track_to_id' => $track->id,
+                'pos_x' => 920,
+                'pos_y' => $y,
+                'keterangan' => "Wesel throat timur untuk {$track->name}",
+            ]
+        );
     }
 }

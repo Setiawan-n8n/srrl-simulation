@@ -18,29 +18,29 @@ class TrainResource extends Resource
 
     protected static ?string $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'Kereta Api';
+    protected static ?string $navigationLabel = 'Train';
 
-    protected static ?string $modelLabel = 'KA';
+    protected static ?string $modelLabel = 'Train';
 
     protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('no_ka')->label('No KA')->required()->maxLength(30),
-            Forms\Components\TextInput::make('nama')->label('Nama KA')->required()->maxLength(255),
+            Forms\Components\TextInput::make('no_ka')->label('Train No.')->required()->maxLength(30),
+            Forms\Components\TextInput::make('nama')->label('Train Name')->required()->maxLength(255),
             Forms\Components\Select::make('kategori')
-                ->label('Kategori')
+                ->label('Category')
                 ->options([
-                    'penumpang' => 'Penumpang',
-                    'barang' => 'Barang',
-                    'komuter' => 'Komuter',
-                    'langsir' => 'Langsir',
-                    'dinas' => 'Dinas Rangkaian',
-                    'lainnya' => 'Lainnya',
+                    'penumpang' => 'Passenger',
+                    'barang' => 'Freight',
+                    'komuter' => 'Commuter',
+                    'langsir' => 'Shunting',
+                    'dinas' => 'Duty Consist',
+                    'lainnya' => 'Other',
                 ])
                 ->required(),
-            Forms\Components\Textarea::make('keterangan')->label('Keterangan')->rows(2)->columnSpanFull(),
+            Forms\Components\Textarea::make('keterangan')->label('Notes')->rows(2)->columnSpanFull(),
         ])->columns(2);
     }
 
@@ -48,26 +48,36 @@ class TrainResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('no_ka')->label('No KA')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('nama')->label('Nama')->searchable(),
-                Tables\Columns\TextColumn::make('kategori')->label('Kategori')->badge()->color(fn (string $state) => match ($state) {
-                    'penumpang' => 'success',
-                    'barang' => 'warning',
-                    'komuter' => 'info',
-                    'langsir' => 'gray',
-                    'dinas' => 'primary',
-                    default => 'gray',
-                }),
-                Tables\Columns\TextColumn::make('schedules_count')->label('Jumlah Jadwal')->counts('schedules'),
+                Tables\Columns\TextColumn::make('no_ka')->label('Train No.')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('nama')->label('Name')->searchable(),
+                Tables\Columns\TextColumn::make('kategori')->label('Category')->badge()
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'penumpang' => 'Passenger',
+                        'barang' => 'Freight',
+                        'komuter' => 'Commuter',
+                        'langsir' => 'Shunting',
+                        'dinas' => 'Duty Consist',
+                        'lainnya' => 'Other',
+                        default => $state,
+                    })
+                    ->color(fn (string $state) => match ($state) {
+                        'penumpang' => 'success',
+                        'barang' => 'warning',
+                        'komuter' => 'info',
+                        'langsir' => 'gray',
+                        'dinas' => 'primary',
+                        default => 'gray',
+                    }),
+                Tables\Columns\TextColumn::make('schedules_count')->label('Schedule Count')->counts('schedules'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('kategori')->options([
-                    'penumpang' => 'Penumpang',
-                    'barang' => 'Barang',
-                    'komuter' => 'Komuter',
-                    'langsir' => 'Langsir',
-                    'dinas' => 'Dinas Rangkaian',
-                    'lainnya' => 'Lainnya',
+                    'penumpang' => 'Passenger',
+                    'barang' => 'Freight',
+                    'komuter' => 'Commuter',
+                    'langsir' => 'Shunting',
+                    'dinas' => 'Duty Consist',
+                    'lainnya' => 'Other',
                 ]),
             ])
             ->actions([

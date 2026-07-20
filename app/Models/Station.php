@@ -14,6 +14,12 @@ class Station extends Model
         'name',
         'side',
         'is_own_station',
+        'km_position',
+        'arah_barat_label',
+        'arah_timur_label',
+        'sort_order',
+        'diagram_svg_path',
+        'diagram_viewbox',
         'keterangan',
     ];
 
@@ -29,5 +35,39 @@ class Station extends Model
     public function scheduleAsDestination()
     {
         return $this->hasMany(TrainSchedule::class, 'relasi_tujuan_id');
+    }
+
+    /**
+     * Jalur/sinyal/wesel/jadwal milik emplasemen stasiun ini (kalau
+     * is_own_station = true).
+     */
+    public function tracks()
+    {
+        return $this->hasMany(Track::class);
+    }
+
+    public function signals()
+    {
+        return $this->hasMany(Signal::class);
+    }
+
+    public function wesels()
+    {
+        return $this->hasMany(Wesel::class);
+    }
+
+    public function trackAdjacencies()
+    {
+        return $this->hasMany(TrackAdjacency::class);
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(TrainSchedule::class);
+    }
+
+    public function scopeSimulasi($query)
+    {
+        return $query->where('is_own_station', true)->orderBy('sort_order');
     }
 }

@@ -28,7 +28,7 @@ class FilamentAdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile()
-            ->brandName('Simulasi KA SGU')
+            ->brandName('SRRL Train Schedule Simulation')
             ->colors([
                 'primary' => Color::Amber,
             ])

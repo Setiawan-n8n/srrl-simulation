@@ -18,20 +18,26 @@ class TrackResource extends Resource
 
     protected static ?string $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'Jalur Emplasemen';
+    protected static ?string $navigationLabel = 'Track / Yard';
 
-    protected static ?string $modelLabel = 'Jalur';
+    protected static ?string $modelLabel = 'Track';
 
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('code')->label('Kode Jalur')->required()->maxLength(5)->unique(ignoreRecord: true),
-            Forms\Components\TextInput::make('name')->label('Nama')->required()->maxLength(255),
-            Forms\Components\TextInput::make('jenis')->label('Jenis Sepur')->maxLength(255),
-            Forms\Components\TextInput::make('sort_order')->label('Urutan Tampil')->numeric()->default(0),
-            Forms\Components\Textarea::make('keterangan')->label('Keterangan')->rows(2)->columnSpanFull(),
+            Forms\Components\Select::make('station_id')
+                ->label('Station')
+                ->relationship('station', 'name')
+                ->searchable()
+                ->preload()
+                ->required(),
+            Forms\Components\TextInput::make('code')->label('Track Code')->required()->maxLength(5),
+            Forms\Components\TextInput::make('name')->label('Name')->required()->maxLength(255),
+            Forms\Components\TextInput::make('jenis')->label('Track Type')->maxLength(255),
+            Forms\Components\TextInput::make('sort_order')->label('Display Order')->numeric()->default(0),
+            Forms\Components\Textarea::make('keterangan')->label('Notes')->rows(2)->columnSpanFull(),
         ])->columns(2);
     }
 
@@ -39,10 +45,14 @@ class TrackResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('code')->label('Kode')->sortable(),
-                Tables\Columns\TextColumn::make('name')->label('Nama')->searchable(),
-                Tables\Columns\TextColumn::make('jenis')->label('Jenis'),
-                Tables\Columns\TextColumn::make('schedules_count')->label('Jumlah Jadwal')->counts('schedules'),
+                Tables\Columns\TextColumn::make('station.name')->label('Station')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('code')->label('Code')->sortable(),
+                Tables\Columns\TextColumn::make('name')->label('Name')->searchable(),
+                Tables\Columns\TextColumn::make('jenis')->label('Type'),
+                Tables\Columns\TextColumn::make('schedules_count')->label('Schedule Count')->counts('schedules'),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('station_id')->relationship('station', 'name')->label('Station'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

@@ -10,6 +10,7 @@ class TrainSchedule extends Model
     use HasFactory;
 
     protected $fillable = [
+        'station_id',
         'tanggal',
         'urutan',
         'train_id',
@@ -31,6 +32,11 @@ class TrainSchedule extends Model
         'jam_datang' => 'datetime:H:i',
         'jam_berangkat' => 'datetime:H:i',
     ];
+
+    public function station()
+    {
+        return $this->belongsTo(Station::class);
+    }
 
     public function train()
     {

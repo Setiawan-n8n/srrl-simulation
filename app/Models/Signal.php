@@ -10,6 +10,7 @@ class Signal extends Model
     use HasFactory;
 
     protected $fillable = [
+        'station_id',
         'code',
         'track_id',
         'side',
@@ -19,6 +20,15 @@ class Signal extends Model
         'pos_y',
         'keterangan',
     ];
+
+    protected $casts = [
+        'posisi_km' => 'float',
+    ];
+
+    public function station()
+    {
+        return $this->belongsTo(Station::class);
+    }
 
     public function track()
     {

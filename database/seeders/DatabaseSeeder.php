@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             StationSeeder::class,
             TrackSeeder::class,
             SignalWeselSeeder::class,
+            TrackAdjacencySeeder::class,
             TrainScheduleSeeder::class,
         ]);
     }

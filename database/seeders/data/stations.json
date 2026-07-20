@@ -4,7 +4,13 @@
   "name": "Surabaya Gubeng",
   "side": "barat",
   "is_own_station": true,
-  "keterangan": "Stasiun asal simulasi ini."
+  "km_position": "Km 4+475 (SB-PNR) / Km 0+000 (SGU-BET)",
+  "arah_barat_label": "Toward Wonokromo",
+  "arah_timur_label": "Toward Sidotopo / Surabaya Kota",
+  "sort_order": 3,
+  "diagram_svg_path": "img/emplasemen/sgu.png",
+  "diagram_viewbox": "0 0 5669.2915 1984.252",
+  "keterangan": "Stasiun asal simulasi ini. Denah memakai gambar asli dari Gambar Emplasemen Stasiun SGU.pdf (Sintelis Daop 8, Juni 2017) -- posisi kereta di sepanjang jalur adalah pendekatan visual (bukan hasil pelacakan koordinat vektor presisi penuh dari PDF)."
  },
  {
   "code": "BD",
@@ -137,7 +143,7 @@
   "name": "Depo/Dinas Sidotopo (SB)",
   "side": "timur",
   "is_own_station": false,
-  "keterangan": "Kode internal dinas rangkaian/langsir, arah diasumsikan ke Sidotopo. Perlu verifikasi oleh Sintelis/PPKA."
+  "keterangan": "Kode internal dinas rangkaian/langsir, arah diasumsikan ke Sidotopo. Perlu verifikasi oleh Sintelis/PPKA. Catatan: kode resmi SB pada sistem KAI sebenarnya untuk Surabaya Kota -- lihat entri SBK untuk emplasemen Surabaya Kota pada simulasi ini, dipisah supaya tidak mengubah makna data jadwal SGU yang sudah ada."
  },
  {
   "code": "SBE",
@@ -150,15 +156,34 @@
   "code": "SBI",
   "name": "Surabaya Pasar Turi",
   "side": "timur",
-  "is_own_station": false,
-  "keterangan": ""
+  "is_own_station": true,
+  "km_position": "Km. 229+573",
+  "arah_barat_label": "Toward Tandes / Semarang",
+  "arah_timur_label": "Toward Sidotopo / Surabaya Kota",
+  "sort_order": 1,
+  "keterangan": "Emplasemen disederhanakan dari Gambar Emplasemen Stasiun Wilayah SRRL.pdf (Sintelis Daop 8, Mei 2017)."
+ },
+ {
+  "code": "SBK",
+  "name": "Surabaya Kota",
+  "side": "timur",
+  "is_own_station": true,
+  "km_position": "Km. 0+299 (SB-BW) / Km. 2+046 (SDT-SB)",
+  "arah_barat_label": "Toward Surabaya Pasar Turi",
+  "arah_timur_label": "Toward Sidotopo / Surabaya Gubeng",
+  "sort_order": 2,
+  "keterangan": "Kode SBK dipakai khusus untuk emplasemen simulasi Surabaya Kota (kode resmi KAI: SB), dipisah dari entri relasi 'SB' yang sudah ada di jadwal SGU. Disederhanakan dari Gambar Emplasemen Stasiun Wilayah SRRL.pdf (Sintelis Daop 8, Juni 2017)."
  },
  {
   "code": "SDA",
   "name": "Sidoarjo",
   "side": "barat",
-  "is_own_station": false,
-  "keterangan": ""
+  "is_own_station": true,
+  "km_position": "Km. 25+510",
+  "arah_barat_label": "Toward Gedangan / Surabaya",
+  "arah_timur_label": "Toward Tanggulangin / Malang",
+  "sort_order": 7,
+  "keterangan": "Emplasemen disederhanakan dari Gambar Emplasemen Stasiun Wilayah SRRL.pdf (Sintelis Daop 8, Agustus 2022)."
  },
  {
   "code": "SDT",
@@ -166,6 +191,39 @@
   "side": "timur",
   "is_own_station": false,
   "keterangan": ""
+ },
+ {
+  "code": "WO",
+  "name": "Wonokromo",
+  "side": "barat",
+  "is_own_station": true,
+  "km_position": "Km. 7+881 (SB-PNR) / Km. 17+361 (WO-SLO)",
+  "arah_barat_label": "Toward Surabaya Gubeng",
+  "arah_timur_label": "Toward Waru",
+  "sort_order": 4,
+  "keterangan": "Emplasemen disederhanakan dari Gambar Emplasemen Stasiun Wilayah SRRL.pdf (Sintelis Daop 8)."
+ },
+ {
+  "code": "WR",
+  "name": "Waru",
+  "side": "barat",
+  "is_own_station": true,
+  "km_position": "Km. 13+641",
+  "arah_barat_label": "Toward Wonokromo",
+  "arah_timur_label": "Toward Gedangan",
+  "sort_order": 5,
+  "keterangan": "Emplasemen disederhanakan dari Gambar Emplasemen Stasiun Wilayah SRRL.pdf (Sintelis Daop 8)."
+ },
+ {
+  "code": "GDG",
+  "name": "Gedangan",
+  "side": "barat",
+  "is_own_station": true,
+  "km_position": "Km. 17+680",
+  "arah_barat_label": "Toward Sidoarjo",
+  "arah_timur_label": "Toward Waru",
+  "sort_order": 6,
+  "keterangan": "Emplasemen disederhanakan dari Gambar Emplasemen Stasiun Wilayah SRRL.pdf (Sintelis Daop 8, Juni 2022)."
  },
  {
   "code": "YK",
