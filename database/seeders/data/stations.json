@@ -62,6 +62,13 @@
   "keterangan": ""
  },
  {
+  "code": "KLM",
+  "name": "Kalimas",
+  "side": "timur",
+  "is_own_station": false,
+  "keterangan": "Dipo/emplasemen barang Kalimas, terhubung ke Sidotopo lewat percabangan SDT-KLM (lihat Km 0+000 (SDT-KLM) pada Gambar Emplasemen SDT.pdf). Muncul sebagai kode relasi pada jadwal KA SDT 12 Agustus 2026, ditambahkan otomatis supaya relasi_asal/relasi_tujuan baris jadwal tsb bisa dipetakan -- belum ada data emplasemen sendiri untuk Kalimas di simulasi ini."
+ },
+ {
   "code": "KTG",
   "name": "Ketapang (Banyuwangi)",
   "side": "barat",
@@ -189,8 +196,14 @@
   "code": "SDT",
   "name": "Sidotopo",
   "side": "timur",
-  "is_own_station": false,
-  "keterangan": ""
+  "is_own_station": true,
+  "km_position": "Km 0+000 (SDT-KLM) / Km 0+000 (SDT-SB) / Km 3+454 (SGU-BET)",
+  "arah_barat_label": "Toward Surabaya Gubeng / Surabaya Kota (lewat STM) / Dipo",
+  "arah_timur_label": "Toward Benteng (Tanjung Perak)",
+  "sort_order": 0,
+  "diagram_svg_path": "img/emplasemen/sdt.png",
+  "diagram_viewbox": "0 0 3370.3938 2383.937",
+  "keterangan": "Denah memakai gambar asli dari \"Gambar Emplasemen SDT.pdf\" (Sintelis Daop 8, April 2020). Stasiun Sidotopo adalah emplasemen langsir/depo (17 jalur, tanpa peron penumpang -- KA yang lewat sini umumnya dinas rangkaian/langsir), berbentuk simpang tiga: barat bercabang ke arah Surabaya Gubeng, Surabaya Kota (lewat STM), dan dipo (kereta/lokomotif/mekanik); timur menyatu ke satu jalur arah Benteng (Tanjung Perak), plus cabang jalur dipo/putar dipo. BERBEDA dari metodologi SGU: posisi & panjang jalur (17 jalur) tetap diekstrak dari data vektor asli PDF (garis jalur + label 'Km. N+MMM' pada lapisan teks), tapi PDF sumber ini TIDAK menyertakan nomor wesel/sinyal sebagai teks (nomor pada gambar dirender sebagai bentuk vektor, bukan karakter) -- nomor wesel di sini diperoleh lewat OCR (tesseract) atas render resolusi tinggi, jadi sebagian nomor bisa salah baca/tidak lengkap. Kurva jalur di area percabangan wesel (throat barat & timur) BUKAN hasil pelacakan vektor titik-per-titik seperti SGU, melainkan interpolasi kurva halus dari titik jalur lurus asli (akurat) menuju titik pertemuan yang diperkirakan dari gambar (topologi wesel-ke-wesel sesungguhnya, mis. jalur mana terhubung ke arah Sgu vs Sb Kota, belum dipetakan -- lihat catatan lengkap di TrackSeeder::seedJalurSdtPresisi())."
  },
  {
   "code": "WO",

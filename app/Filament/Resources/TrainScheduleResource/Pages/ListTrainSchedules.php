@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TrainScheduleResource\Pages;
 
 use App\Filament\Resources\TrainScheduleResource;
+use App\Models\Station;
 use App\Support\JadwalImporter;
 use App\Support\TableExporter;
 use Filament\Actions;
@@ -65,6 +66,12 @@ class ListTrainSchedules extends ListRecords
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('success')
                 ->form([
+                    Forms\Components\Select::make('station_id')
+                        ->label('Station (emplasemen)')
+                        ->helperText('Jadwal akan ditautkan ke stasiun ini -- WAJIB diisi, kalau tidak baris jadwal tidak akan muncul di halaman simulasi manapun (lihat catatan bug Agustus 2026 di README).')
+                        ->options(fn () => Station::query()->simulasi()->pluck('name', 'id'))
+                        ->required()
+                        ->searchable(),
                     Forms\Components\FileUpload::make('file')
                         ->label('Excel File (.xlsx)')
                         ->disk('local')
@@ -87,6 +94,7 @@ class ListTrainSchedules extends ListRecords
                     $count = JadwalImporter::importFromFile(
                         $path,
                         $data['tanggal'],
+                        (int) $data['station_id'],
                         $data['sheet'] ?: 'Sheet1'
                     );
 

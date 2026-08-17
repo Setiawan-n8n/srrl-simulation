@@ -20,6 +20,11 @@ class SignalWeselSeeder extends Seeder
             $this->seedSguPresisi($sgu);
         }
 
+        $sdt = Station::where('code', 'SDT')->first();
+        if ($sdt) {
+            $this->seedSdtPresisi($sdt);
+        }
+
         foreach ($this->stasiunLain as $code) {
             $station = Station::where('code', $code)->first();
             if (! $station) {
@@ -153,6 +158,64 @@ class SignalWeselSeeder extends Seeder
                     'keterangan' => "Sinyal masuk stasiun arah ".($s['arah'] === 'barat' ? 'Wonokromo' : 'Sidotopo/Surabaya Kota').", KM {$this->fmtKm($s['km'])}. Posisi diambil langsung dari kotak nomor sinyal pada lapisan teks PDF. Sinyal ini berada di baris bersama sebelum jalur bercabang ke I-VI, sehingga belum dipetakan ke satu jalur spesifik (track_id kosong) -- secara operasional mengendalikan beberapa jalur sekaligus lewat interlocking.",
                 ]
             );
+        }
+    }
+
+    /**
+     * Wesel Sidotopo, digitisasi dari "Gambar Emplasemen SDT.pdf" (lihat
+     * catatan metodologi lengkap di TrackSeeder::seedJalurSdtPresisi()).
+     * Sumber: database/seeders/data/sdt_geometri_presisi.json.
+     *
+     * BEDA dari SGU: kode wesel di sini berasal dari OCR (bukan lapisan
+     * teks PDF), sehingga sebagian nomor tidak lengkap/tidak akurat --
+     * hanya wesel dengan confidence OCR tinggi (>= 60%) yang disertakan
+     * saat data ini dibangun. Semua entri disimpan sebagai jenis 'wesel'
+     * (bukan 'signal') karena PDF sumber tidak membedakan keduanya lewat
+     * teks yang bisa diekstrak -- lihat legenda gambar ("Kedudukan biasa
+     * wesel terlayan pusat/tempat") untuk makna simbol lingkaran kecil di
+     * dekat tiap nomor. Sisi (barat/timur) ditentukan dari titik tengah
+     * jalur (west_x/east_x) karena Sidotopo tidak punya peron sebagai
+     * acuan (beda dari SGU yang memakai titik tengah peron).
+     */
+    private function seedSdtPresisi(Station $sdt): void
+    {
+        $path = database_path('seeders/data/sdt_geometri_presisi.json');
+        if (! file_exists($path)) {
+            return;
+        }
+        $data = json_decode(file_get_contents($path), true);
+        $tracks = Track::where('station_id', $sdt->id)->orderBy('sort_order')->get();
+
+        // Wipe-and-recreate, sama alasannya dengan seedSguPresisi(): supaya
+        // tidak ada sisa wesel dari percobaan seeding sebelumnya yang
+        // kode/posisinya sudah tidak dipakai lagi oleh data presisi ini.
+        Signal::where('station_id', $sdt->id)->delete();
+        Wesel::where('station_id', $sdt->id)->delete();
+
+        foreach ($data['tracks'] as $code => $t) {
+            $track = $tracks->firstWhere('code', $code);
+            if (! $track) {
+                continue;
+            }
+
+            $tengah = ($t['west_x'] + $t['east_x']) / 2;
+
+            foreach ($t['wesels'] as $w) {
+                $side = $w['x'] <= $tengah ? 'barat' : 'timur';
+                $confidence = $w['ocr_conf'] ?? null;
+
+                Wesel::query()->updateOrCreate(
+                    ['station_id' => $sdt->id, 'code' => $w['code'], 'side' => $side],
+                    [
+                        'track_from_id' => $track->id,
+                        'track_to_id' => $track->id,
+                        'posisi_km' => $w['km'],
+                        'pos_x' => (int) round($w['x']),
+                        'pos_y' => (int) round($w['y']),
+                        'keterangan' => "Wesel {$track->name}, dekat KM {$this->fmtKm($w['km'])}. Nomor & posisi dibaca lewat OCR dari render PDF (confidence {$confidence}%), bukan dari lapisan teks -- mohon diverifikasi ulang lewat panel admin terhadap gambar sumber. Topologi sambungan ke jalur lain (crossover di area percabangan Sgu/Sb Kota/dipo) belum dipetakan.",
+                    ]
+                );
+            }
         }
     }
 

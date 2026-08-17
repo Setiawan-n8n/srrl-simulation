@@ -24,6 +24,8 @@ class TrainSchedule extends Model
         'jam_berangkat',
         'jam_berangkat_ket',
         'track_id',
+        'gan_gen',
+        'waktu_tinggal_menit',
         'catatan',
     ];
 

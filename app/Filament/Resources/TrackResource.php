@@ -33,7 +33,7 @@ class TrackResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required(),
-            Forms\Components\TextInput::make('code')->label('Track Code')->required()->maxLength(5),
+            Forms\Components\TextInput::make('code')->label('Track Code')->required()->maxLength(20),
             Forms\Components\TextInput::make('name')->label('Name')->required()->maxLength(255),
             Forms\Components\TextInput::make('jenis')->label('Track Type')->maxLength(255),
             Forms\Components\TextInput::make('sort_order')->label('Display Order')->numeric()->default(0),
